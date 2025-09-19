@@ -50,7 +50,7 @@ export function SimpleConverter() {
     return ffmpegRef.current;
   };
 
-  const convertToMp3 = async (m4aBlob: Blob, filename: string): Promise<Blob> => {
+  const convertToMp3 = async (m4aBlob: Blob): Promise<Blob> => {
     const ffmpeg = await initFFmpeg();
 
     // Write M4A file to FFmpeg filesystem
@@ -72,7 +72,8 @@ export function SimpleConverter() {
     await ffmpeg.deleteFile('input.m4a');
     await ffmpeg.deleteFile('output.mp3');
 
-    return new Blob([data], { type: 'audio/mpeg' });
+    // Convert FileData to BlobPart for Blob creation
+    return new Blob([data as BlobPart], { type: 'audio/mpeg' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -144,7 +145,7 @@ export function SimpleConverter() {
       });
 
       console.log('Starting FFmpeg conversion...');
-      const mp3Blob = await convertToMp3(m4aBlob, videoInfo.title);
+      const mp3Blob = await convertToMp3(m4aBlob);
       console.log('FFmpeg conversion completed. MP3 size:', mp3Blob.size, 'bytes');
 
       const downloadUrl = URL.createObjectURL(mp3Blob);

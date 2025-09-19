@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       const chunks: Buffer[] = [];
       let totalSize = 0;
 
-      return new Promise<NextResponse>((resolve, reject) => {
+      return new Promise<NextResponse>((resolve) => {
         let hasError = false;
 
         audioStream.on('data', (chunk: Buffer) => {

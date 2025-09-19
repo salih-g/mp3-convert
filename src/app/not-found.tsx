@@ -1,6 +1,5 @@
 import Link from 'next/link';
-import { Music, Home, Search, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Music, Home, ArrowLeft } from 'lucide-react';
 
 export default function NotFound() {
   return (
@@ -29,25 +28,21 @@ export default function NotFound() {
             Aradığınız sayfa mevcut değil veya taşınmış olabilir.
           </p>
           <p className="text-sm text-muted-foreground">
-            Ana sayfaya dönüp YouTube videolarınızı MP3'e dönüştürmeye devam edebilirsiniz.
+            Ana sayfaya dönüp YouTube videolarınızı MP3&apos;e dönüştürmeye devam edebilirsiniz.
           </p>
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button asChild className="flex items-center gap-2">
-            <Link href="/">
-              <Home className="h-4 w-4" />
-              Ana Sayfa
-            </Link>
-          </Button>
+          <Link href="/" className="btn btn-primary flex items-center gap-2 h-10 px-4 py-2">
+            <Home className="h-4 w-4" />
+            Ana Sayfa
+          </Link>
 
-          <Button variant="secondary" asChild className="flex items-center gap-2">
-            <Link href="javascript:history.back()">
-              <ArrowLeft className="h-4 w-4" />
-              Geri Dön
-            </Link>
-          </Button>
+          <Link href="javascript:history.back()" className="btn btn-secondary flex items-center gap-2 h-10 px-4 py-2">
+            <ArrowLeft className="h-4 w-4" />
+            Geri Dön
+          </Link>
         </div>
 
         {/* Quick Links */}
@@ -58,7 +53,7 @@ export default function NotFound() {
               href="/"
               className="text-xs bg-muted hover:bg-muted/80 px-3 py-1 rounded-full transition-colors"
             >
-              YouTube'dan MP3
+              YouTube&apos;dan MP3
             </Link>
             <Link
               href="/"
