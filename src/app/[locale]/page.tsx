@@ -1,6 +1,5 @@
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import { setRequestLocale } from 'next-intl/server';
-import { use } from 'react';
 import { YouTubeConverter } from '@/components/youtube-converter';
 import { LanguageSelector } from '@/components/language-selector';
 import { Music, Zap, Shield, Heart } from 'lucide-react';
@@ -9,10 +8,10 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
-export default function HomePage({ params }: Props) {
-  const { locale } = use(params);
+export default async function HomePage({ params }: Props) {
+  const { locale } = await params;
   setRequestLocale(locale);
-  const t = useTranslations('HomePage');
+  const t = await getTranslations('HomePage');
 
   const jsonLd = {
     '@context': 'https://schema.org',
