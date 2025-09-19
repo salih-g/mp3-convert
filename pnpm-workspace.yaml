@@ -2,3 +2,4 @@ onlyBuiltDependencies:
   - '@tailwindcss/oxide'
   - sharp
   - unrs-resolver
+  - youtube-dl-exec
