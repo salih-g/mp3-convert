@@ -1,34 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isValidYouTubeUrl, sanitizeFilename } from '@/lib/utils';
 import { getVideoInfo, downloadAudio } from '@/lib/youtube';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { tmpdir } from 'os';
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting
-    const clientIp = getClientIp(request);
-    const rateLimitResult = await rateLimit(clientIp, 3, 3600); // 3 requests per hour
-
-    if (!rateLimitResult.success) {
-      return NextResponse.json(
-        {
-          error: 'Rate limit exceeded. Please try again later.',
-          retryAfter: Math.ceil((rateLimitResult.reset - Date.now()) / 1000)
-        },
-        {
-          status: 429,
-          headers: {
-            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
-            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-            'X-RateLimit-Reset': rateLimitResult.reset.toString(),
-          }
-        }
-      );
-    }
-
     const { url } = await request.json();
 
     if (!url || !isValidYouTubeUrl(url)) {
@@ -80,9 +58,6 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'audio/mpeg',
         'Content-Disposition': `attachment; filename="${filename}"`,
         'Content-Length': audioBuffer.length.toString(),
-        'X-RateLimit-Limit': rateLimitResult.limit.toString(),
-        'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-        'X-RateLimit-Reset': rateLimitResult.reset.toString(),
       });
 
       return new NextResponse(audioBuffer, {
