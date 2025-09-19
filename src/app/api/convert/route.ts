@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isValidYouTubeUrl, sanitizeFilename } from '@/lib/utils';
-import { getVideoInfo, downloadAudio } from '@/lib/youtube';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { tmpdir } from 'os';
+import { getVideoInfo, getAudioStream } from '@/lib/youtube';
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,60 +28,94 @@ export async function POST(request: NextRequest) {
     const sanitizedTitle = sanitizeFilename(videoInfo.title);
     const filename = `${sanitizedTitle}.mp3`;
 
-    // Create temporary file path
-    const tempDir = tmpdir();
-    const tempFilePath = path.join(tempDir, `${Date.now()}-${videoInfo.videoId}`);
-    const outputPath = `${tempFilePath}.%(ext)s`;
-
     try {
-      // Download and convert audio
-      await downloadAudio(url, outputPath);
+      // Get audio stream
+      const audioStream = await getAudioStream(url);
 
-      // Find the actual output file
-      const actualOutputPath = `${tempFilePath}.mp3`;
+      // Convert stream to buffer using a more robust approach
+      const chunks: Buffer[] = [];
+      let totalSize = 0;
 
-      // Read the file
-      const audioBuffer = await fs.readFile(actualOutputPath);
+      return new Promise<NextResponse>((resolve, reject) => {
+        let hasError = false;
 
-      // Clean up temporary file
-      try {
-        await fs.unlink(actualOutputPath);
-      } catch (cleanupError) {
-        console.warn('Failed to cleanup temp file:', cleanupError);
-      }
+        audioStream.on('data', (chunk: Buffer) => {
+          if (!hasError) {
+            chunks.push(chunk);
+            totalSize += chunk.length;
+            console.log(`Received chunk: ${chunk.length} bytes, total: ${totalSize} bytes`);
+          }
+        });
 
-      // Return the file as a download
-      const headers = new Headers({
-        'Content-Type': 'audio/mpeg',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Content-Length': audioBuffer.length.toString(),
+        audioStream.on('end', () => {
+          if (hasError) return;
+
+          console.log(`Stream ended. Total chunks: ${chunks.length}, total size: ${totalSize} bytes`);
+
+          if (chunks.length === 0 || totalSize === 0) {
+            console.error('No audio data received from stream');
+            resolve(NextResponse.json(
+              { error: 'No audio data received' },
+              { status: 500 }
+            ));
+            return;
+          }
+
+          // Combine all chunks into a single buffer
+          const audioBuffer = Buffer.concat(chunks);
+          console.log(`Final buffer size: ${audioBuffer.length} bytes`);
+
+          // Return the file as a download
+          const headers = new Headers({
+            'Content-Type': 'audio/mp4',
+            'Content-Disposition': `attachment; filename="${filename.replace('.mp3', '.m4a')}"`,
+            'Content-Length': audioBuffer.length.toString(),
+          });
+
+          resolve(new NextResponse(audioBuffer, {
+            status: 200,
+            headers,
+          }));
+        });
+
+        audioStream.on('error', (error: Error) => {
+          hasError = true;
+          console.error('Stream error:', error);
+
+          if (error.message.includes('Video unavailable') ||
+              error.message.includes('not found')) {
+            resolve(NextResponse.json(
+              { error: 'Video not found or unavailable' },
+              { status: 404 }
+            ));
+          } else if (error.message.includes('private') ||
+                     error.message.includes('restricted')) {
+            resolve(NextResponse.json(
+              { error: 'Video is private or restricted' },
+              { status: 403 }
+            ));
+          } else {
+            resolve(NextResponse.json(
+              { error: 'Failed to convert video to audio' },
+              { status: 500 }
+            ));
+          }
+        });
       });
 
-      return new NextResponse(new Uint8Array(audioBuffer), {
-        status: 200,
-        headers,
-      });
+    } catch (streamError) {
+      console.error('Stream error:', streamError);
 
-    } catch (downloadError) {
-      console.error('Download error:', downloadError);
-
-      // Try to clean up any partial files
-      try {
-        await fs.unlink(`${tempFilePath}.mp3`);
-      } catch {
-        // Ignore cleanup errors
-      }
-
-      if (downloadError instanceof Error) {
-        if (downloadError.message.includes('Video unavailable') ||
-            downloadError.message.includes('not found')) {
+      if (streamError instanceof Error) {
+        if (streamError.message.includes('Video unavailable') ||
+            streamError.message.includes('not found')) {
           return NextResponse.json(
             { error: 'Video not found or unavailable' },
             { status: 404 }
           );
         }
-        if (downloadError.message.includes('private') ||
-            downloadError.message.includes('restricted')) {
+        if (streamError.message.includes('private') ||
+            streamError.message.includes('restricted')) {
           return NextResponse.json(
             { error: 'Video is private or restricted' },
             { status: 403 }
@@ -93,7 +124,7 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json(
-        { error: 'Failed to convert video to MP3' },
+        { error: 'Failed to convert video to audio' },
         { status: 500 }
       );
     }
