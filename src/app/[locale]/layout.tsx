@@ -24,14 +24,15 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const messages = await getMessages();
   const seoMessages = messages.SEO as any;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
   return {
     title: seoMessages?.title || 'YouTube to MP3 Converter',
     description: seoMessages?.description || 'Convert YouTube videos to MP3 format instantly',
     keywords: seoMessages?.keywords || 'youtube to mp3, converter, download',
-    metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+    metadataBase: new URL(baseUrl),
     alternates: {
-      canonical: '/',
+      canonical: locale === 'en' ? '/' : `/${locale}`,
       languages: {
         'en': '/en',
         'tr': '/tr',
@@ -42,15 +43,45 @@ export async function generateMetadata({
       description: seoMessages?.description || 'Convert YouTube videos to MP3 format instantly',
       type: 'website',
       locale: locale,
+      url: locale === 'en' ? baseUrl : `${baseUrl}/${locale}`,
+      siteName: 'YT2MP3',
+      images: [
+        {
+          url: `/opengraph-image`,
+          width: 1200,
+          height: 630,
+          alt: seoMessages?.title || 'YouTube to MP3 Converter',
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
       title: seoMessages?.title || 'YouTube to MP3 Converter',
       description: seoMessages?.description || 'Convert YouTube videos to MP3 format instantly',
+      images: [`/opengraph-image`],
     },
     robots: {
       index: true,
       follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+    verification: {
+      google: 'add-your-google-verification-code-here',
+    },
+    category: 'technology',
+    classification: 'Tools',
+    other: {
+      'application-name': 'YT2MP3',
+      'apple-mobile-web-app-title': 'YT2MP3',
+      'apple-mobile-web-app-capable': 'yes',
+      'apple-mobile-web-app-status-bar-style': 'default',
+      'format-detection': 'telephone=no',
     },
   };
 }

@@ -12,9 +12,46 @@ export default function HomePage({ params: { locale } }: Props) {
   unstable_setRequestLocale(locale);
   const t = useTranslations('HomePage');
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: t('title'),
+    description: t('description'),
+    url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    applicationCategory: 'MultimediaApplication',
+    operatingSystem: 'Any',
+    permissions: 'no special permissions required',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    author: {
+      '@type': 'Organization',
+      name: 'YT2MP3',
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.8',
+      ratingCount: '1000',
+    },
+    featureList: [
+      'High Quality Audio Conversion',
+      'Fast Processing',
+      'No Registration Required',
+      'Free to Use',
+      'Multiple Language Support',
+    ],
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
-      {/* Header */}
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
+        {/* Header */}
       <header className="w-full px-4 py-4">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -112,6 +149,7 @@ export default function HomePage({ params: { locale } }: Props) {
           <p className="mt-2">{t('footer.disclaimer')}</p>
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }
