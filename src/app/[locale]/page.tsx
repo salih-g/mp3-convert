@@ -8,6 +8,10 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
+export async function generateStaticParams() {
+  return [{locale: 'en'}, {locale: 'tr'}];
+}
+
 export default async function HomePage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
