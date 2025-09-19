@@ -1,0 +1,40 @@
+{
+  "HomePage": {
+    "title": "YouTube'dan MP3 Dönüştürücü",
+    "description": "YouTube videolarını anında yüksek kaliteli MP3 dosyalarına dönüştürün",
+    "urlPlaceholder": "YouTube linkini buraya yapıştırın...",
+    "convertButton": "MP3'e Dönüştür",
+    "downloadButton": "MP3 İndir",
+    "converting": "Dönüştürülüyor...",
+    "fetchingInfo": "Video bilgileri alınıyor...",
+    "error": {
+      "invalidUrl": "Lütfen geçerli bir YouTube linki girin",
+      "notFound": "Video bulunamadı",
+      "tooLong": "Video çok uzun (maksimum 10 dakika)",
+      "rateLimited": "Çok fazla istek. Lütfen daha sonra tekrar deneyin.",
+      "conversionFailed": "Dönüştürme başarısız. Lütfen tekrar deneyin.",
+      "generic": "Bir hata oluştu. Lütfen tekrar deneyin."
+    },
+    "features": {
+      "title": "Neden Bizim Dönüştürücümüz?",
+      "highQuality": "Yüksek Kalite Ses",
+      "highQualityDesc": "YouTube videolarından en iyi ses kalitesini alın",
+      "fast": "Şimşek Hızında",
+      "fastDesc": "Saniyeler içinde dönüştürün ve indirin",
+      "free": "Tamamen Ücretsiz",
+      "freeDesc": "Kayıt veya ödeme gerektirmez",
+      "secure": "Güvenli ve Emniyetli",
+      "secureDesc": "Gizliliğiniz bizim önceliğimiz"
+    }
+  },
+  "Navigation": {
+    "language": "Dil",
+    "turkish": "Türkçe",
+    "english": "English"
+  },
+  "SEO": {
+    "title": "Ücretsiz YouTube MP3 Dönüştürücü - Yüksek Kalite Ses İndirme",
+    "description": "YouTube videolarını anında MP3 formatına dönüştürün. Hızlı, ücretsiz ve yüksek kaliteli ses dönüştürme. Kayıt gerekmez.",
+    "keywords": "youtube mp3, youtube dönüştürücü, mp3 indirme, ses dönüştürücü, ücretsiz dönüştürücü"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "HomePage": {
+    "title": "YouTube to MP3 Converter",
+    "description": "Convert YouTube videos to high-quality MP3 files instantly",
+    "urlPlaceholder": "Paste YouTube URL here...",
+    "convertButton": "Convert to MP3",
+    "downloadButton": "Download MP3",
+    "converting": "Converting...",
+    "fetchingInfo": "Fetching video information...",
+    "error": {
+      "invalidUrl": "Please enter a valid YouTube URL",
+      "notFound": "Video not found",
+      "tooLong": "Video is too long (max 10 minutes)",
+      "rateLimited": "Too many requests. Please try again later.",
+      "conversionFailed": "Conversion failed. Please try again.",
+      "generic": "An error occurred. Please try again."
+    },
+    "features": {
+      "title": "Why Choose Our Converter?",
+      "highQuality": "High Quality Audio",
+      "highQualityDesc": "Get the best audio quality from YouTube videos",
+      "fast": "Lightning Fast",
+      "fastDesc": "Convert and download in seconds",
+      "free": "Completely Free",
+      "freeDesc": "No registration or payment required",
+      "secure": "Safe & Secure",
+      "secureDesc": "Your privacy is our priority"
+    }
+  },
+  "Navigation": {
+    "language": "Language",
+    "turkish": "Türkçe",
+    "english": "English"
+  },
+  "SEO": {
+    "title": "Free YouTube to MP3 Converter - High Quality Audio Download",
+    "description": "Convert YouTube videos to MP3 format instantly. Fast, free, and high-quality audio conversion. No registration required.",
+    "keywords": "youtube to mp3, youtube converter, mp3 download, audio converter, free converter"
+  }
+}
