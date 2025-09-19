@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Add CORS headers for cross-origin requests
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {

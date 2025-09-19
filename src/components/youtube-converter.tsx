@@ -144,6 +144,7 @@ export function YouTubeConverter() {
       {conversionState.videoInfo && (
         <div className="card p-4">
           <div className="flex gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={conversionState.videoInfo.thumbnail}
               alt={conversionState.videoInfo.title}

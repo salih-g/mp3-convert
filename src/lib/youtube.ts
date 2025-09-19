@@ -33,7 +33,7 @@ export async function downloadAudio(url: string, outputPath: string): Promise<st
     const ytDlpWrap = new YTDlpWrap();
 
     // Download audio in best quality, convert to MP3
-    const result = await ytDlpWrap.exec([
+    await ytDlpWrap.exec([
       url,
       '--extract-audio',
       '--audio-format', 'mp3',

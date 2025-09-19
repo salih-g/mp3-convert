@@ -18,12 +18,13 @@ const geistMono = Geist_Mono({
 const locales = ['en', 'tr'];
 
 export async function generateMetadata({
-  params: { locale }
+  params
 }: {
-  params: { locale: string }
+  params: Promise<{ locale: string }>
 }): Promise<Metadata> {
+  const { locale } = await params;
   const messages = await getMessages();
-  const seoMessages = messages.SEO as any;
+  const seoMessages = messages.SEO as Record<string, string>;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
   return {
@@ -88,11 +89,13 @@ export async function generateMetadata({
 
 export default async function RootLayout({
   children,
-  params: { locale }
+  params
 }: Readonly<{
   children: React.ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }>) {
+  const { locale } = await params;
+
   if (!locales.includes(locale)) {
     notFound();
   }

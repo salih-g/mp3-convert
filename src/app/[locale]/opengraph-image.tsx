@@ -10,12 +10,13 @@ export const size = {
 
 export const contentType = 'image/png';
 
-export default async function Image({ params }: { params: { locale: string } }) {
-  const title = params.locale === 'tr'
+export default async function Image({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const title = locale === 'tr'
     ? 'YouTube\'dan MP3 Dönüştürücü'
     : 'YouTube to MP3 Converter';
 
-  const description = params.locale === 'tr'
+  const description = locale === 'tr'
     ? 'YouTube videolarını yüksek kaliteli MP3 dosyalarına dönüştürün'
     : 'Convert YouTube videos to high-quality MP3 files';
 
@@ -107,7 +108,7 @@ export default async function Image({ params }: { params: { locale: string } }) 
             fontSize: '20px',
           }}
         >
-          {params.locale === 'tr' ? 'Ücretsiz • Hızlı • Güvenli' : 'Free • Fast • Secure'}
+          {locale === 'tr' ? 'Ücretsiz • Hızlı • Güvenli' : 'Free • Fast • Secure'}
         </div>
       </div>
     ),

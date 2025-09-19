@@ -1,15 +1,17 @@
 import { useTranslations } from 'next-intl';
-import { unstable_setRequestLocale } from 'next-intl/server';
+import { setRequestLocale } from 'next-intl/server';
+import { use } from 'react';
 import { YouTubeConverter } from '@/components/youtube-converter';
 import { LanguageSelector } from '@/components/language-selector';
 import { Music, Zap, Shield, Heart } from 'lucide-react';
 
 type Props = {
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 };
 
-export default function HomePage({ params: { locale } }: Props) {
-  unstable_setRequestLocale(locale);
+export default function HomePage({ params }: Props) {
+  const { locale } = use(params);
+  setRequestLocale(locale);
   const t = useTranslations('HomePage');
 
   const jsonLd = {

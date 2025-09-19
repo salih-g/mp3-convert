@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
         'Content-Length': audioBuffer.length.toString(),
       });
 
-      return new NextResponse(audioBuffer, {
+      return new NextResponse(new Uint8Array(audioBuffer), {
         status: 200,
         headers,
       });
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Add CORS headers
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
