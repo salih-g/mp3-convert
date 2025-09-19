@@ -34,4 +34,37 @@ This is a Next.js 15 application using the App Router pattern with TypeScript an
 - TypeScript configured with bundler module resolution and strict mode
 - Custom CSS properties for theming with dark mode support via `prefers-color-scheme`
 
-This appears to be a fresh Next.js project intended for YouTube MP3 conversion functionality based on the project name, though the current implementation contains only the default Next.js starter template.
+## YouTube MP3 Conversion Features
+
+This is a YouTube to MP3 converter application with the following functionality:
+
+### Core Features
+- **YouTube Video Info Extraction**: Fetches video metadata (title, duration, thumbnail, author)
+- **MP3 Conversion**: Converts YouTube videos to MP3 format using FFmpeg WASM
+- **Bot Detection Bypass**: Advanced anti-bot detection system for YouTube API calls
+- **Internationalization**: Multi-language support (English, Turkish) using next-intl
+- **Responsive Design**: Mobile-friendly interface with Tailwind CSS
+
+### YouTube Integration (`src/lib/youtube.ts`)
+- Uses `@distube/ytdl-core` for YouTube video information extraction
+- Implements multiple retry attempts with randomized headers to bypass bot detection
+- Includes fallback mechanisms for different request configurations
+- Supports both full video info and basic info retrieval methods
+- Random user agents and headers to appear more human-like
+
+### API Endpoints
+- **`/api/video-info`**: POST endpoint to fetch YouTube video metadata
+  - Validates YouTube URLs
+  - Enforces 10-minute duration limit
+  - Returns video title, duration, thumbnail, and author info
+- **`/api/convert`**: POST endpoint for MP3 conversion (uses FFmpeg WASM)
+
+### Deployment Configuration
+- **Runtime**: Forced to Node.js runtime for ytdl-core compatibility on Vercel
+- **Bot Detection Handling**: Multiple retry mechanisms with delays and header randomization
+- **Error Handling**: Comprehensive error messages for different failure scenarios
+
+### Known Limitations
+- Maximum video duration: 10 minutes
+- Serverless environment constraints (no binary dependencies like youtube-dl)
+- YouTube's anti-bot measures require sophisticated header spoofing
