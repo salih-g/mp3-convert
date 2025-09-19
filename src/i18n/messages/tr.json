@@ -7,6 +7,10 @@
     "downloadButton": "MP3 İndir",
     "converting": "Dönüştürülüyor...",
     "fetchingInfo": "Video bilgileri alınıyor...",
+    "duration": "Süre",
+    "conversionComplete": "Dönüştürme tamamlandı!",
+    "convertAnother": "Başka Dönüştür",
+    "tryAgain": "Tekrar Dene",
     "error": {
       "invalidUrl": "Lütfen geçerli bir YouTube linki girin",
       "notFound": "Video bulunamadı",
@@ -25,6 +29,16 @@
       "freeDesc": "Kayıt veya ödeme gerektirmez",
       "secure": "Güvenli ve Emniyetli",
       "secureDesc": "Gizliliğiniz bizim önceliğimiz"
+    },
+    "howToUse": {
+      "title": "Nasıl Kullanılır",
+      "step1": "YouTube linkini yapıştırın",
+      "step2": "Dönüştür'e tıklayın",
+      "step3": "MP3'ü indirin"
+    },
+    "footer": {
+      "allRightsReserved": "Tüm hakları saklıdır.",
+      "disclaimer": "Bu hizmet yalnızca kişisel kullanım içindir. Lütfen telif hakkı yasalarına saygı gösterin."
     }
   },
   "Navigation": {

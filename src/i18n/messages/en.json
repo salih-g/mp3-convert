@@ -7,6 +7,10 @@
     "downloadButton": "Download MP3",
     "converting": "Converting...",
     "fetchingInfo": "Fetching video information...",
+    "duration": "Duration",
+    "conversionComplete": "Conversion completed!",
+    "convertAnother": "Convert Another",
+    "tryAgain": "Try Again",
     "error": {
       "invalidUrl": "Please enter a valid YouTube URL",
       "notFound": "Video not found",
@@ -25,6 +29,16 @@
       "freeDesc": "No registration or payment required",
       "secure": "Safe & Secure",
       "secureDesc": "Your privacy is our priority"
+    },
+    "howToUse": {
+      "title": "How to Use",
+      "step1": "Paste YouTube URL",
+      "step2": "Click Convert",
+      "step3": "Download MP3"
+    },
+    "footer": {
+      "allRightsReserved": "All rights reserved.",
+      "disclaimer": "This service is for personal use only. Please respect copyright laws."
     }
   },
   "Navigation": {
