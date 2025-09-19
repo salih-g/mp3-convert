@@ -11,7 +11,27 @@ export interface VideoInfo {
 
 export async function getVideoInfo(url: string): Promise<VideoInfo> {
   try {
-    const info = await ytdl.getInfo(url);
+    console.log('Attempting to get video info for URL:', url);
+
+    // Validate URL format
+    if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+      throw new Error('Invalid YouTube URL format');
+    }
+
+    const info = await ytdl.getInfo(url, {
+      requestOptions: {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept-Language': 'en-US,en;q=0.9',
+        }
+      }
+    });
+
+    console.log('Successfully retrieved video info:', {
+      title: info.videoDetails.title,
+      duration: info.videoDetails.lengthSeconds,
+      videoId: info.videoDetails.videoId
+    });
 
     return {
       title: info.videoDetails.title || 'Unknown Title',
@@ -22,7 +42,25 @@ export async function getVideoInfo(url: string): Promise<VideoInfo> {
     };
   } catch (error) {
     console.error('Error getting video info:', error);
-    throw new Error('Failed to get video information');
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      url: url
+    });
+
+    if (error instanceof Error) {
+      if (error.message.includes('Video unavailable')) {
+        throw new Error('Video is unavailable or private');
+      }
+      if (error.message.includes('age-restricted')) {
+        throw new Error('Video is age-restricted');
+      }
+      if (error.message.includes('region')) {
+        throw new Error('Video is not available in your region');
+      }
+    }
+
+    throw new Error('Failed to get video information: ' + (error instanceof Error ? error.message : 'Unknown error'));
   }
 }
 

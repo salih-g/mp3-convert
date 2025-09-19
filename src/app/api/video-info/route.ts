@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isValidYouTubeUrl, formatDuration } from '@/lib/utils';
 import { getVideoInfo } from '@/lib/youtube';
 
+// Force Node.js runtime for ytdl-core compatibility
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     const { url } = await request.json();
