@@ -75,7 +75,10 @@ export function YouTubeConverter() {
         throw new Error(errorData.error || 'Conversion failed');
       }
 
-      const { downloadUrl } = await convertResponse.json();
+      // Handle direct file download response
+      const blob = await convertResponse.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+
       setConversionState({
         status: 'completed',
         videoInfo,

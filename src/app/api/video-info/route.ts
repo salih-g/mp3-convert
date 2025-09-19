@@ -1,9 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isValidYouTubeUrl, formatDuration } from '@/lib/utils';
 import { getVideoInfo } from '@/lib/youtube';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const clientIp = getClientIp(request);
+    const rateLimitResult = await rateLimit(clientIp, 10, 3600); // 10 requests per hour
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Rate limit exceeded. Please try again later.',
+          retryAfter: Math.ceil((rateLimitResult.reset - Date.now()) / 1000)
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString(),
+          }
+        }
+      );
+    }
+
     const { url } = await request.json();
 
     if (!url || !isValidYouTubeUrl(url)) {
@@ -32,7 +54,13 @@ export async function POST(request: NextRequest) {
       author: videoInfo.author,
     };
 
-    return NextResponse.json(responseData);
+    return NextResponse.json(responseData, {
+      headers: {
+        'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+        'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+        'X-RateLimit-Reset': rateLimitResult.reset.toString(),
+      }
+    });
 
   } catch (error) {
     console.error('Video info error:', error);
