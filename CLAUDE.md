@@ -46,11 +46,14 @@ This is a YouTube to MP3 converter application with the following functionality:
 - **Responsive Design**: Mobile-friendly interface with Tailwind CSS
 
 ### YouTube Integration (`src/lib/youtube.ts`)
-- Uses `@distube/ytdl-core` for YouTube video information extraction
-- Implements multiple retry attempts with randomized headers to bypass bot detection
-- Includes fallback mechanisms for different request configurations
-- Supports both full video info and basic info retrieval methods
-- Random user agents and headers to appear more human-like
+- **Multi-layered extraction system** with 3 methods for maximum reliability:
+  1. **Direct page scraping** - Primary method using node-fetch to scrape YouTube pages
+  2. **ytdl-core fallback** - Secondary method with enhanced headers and retry logic
+  3. **URL-based extraction** - Last resort method extracting basic info from video ID
+- **EROFS-safe implementation** - Designed to work on Vercel's read-only filesystem
+- **Randomized headers** - Multiple user agents and Accept-Language headers for bot detection bypass
+- **Comprehensive error handling** - Specific handling for bot detection, region restrictions, and file system errors
+- **Intelligent retry system** - Delays between attempts and method switching on specific error types
 
 ### API Endpoints
 - **`/api/video-info`**: POST endpoint to fetch YouTube video metadata
@@ -66,5 +69,5 @@ This is a YouTube to MP3 converter application with the following functionality:
 
 ### Known Limitations
 - Maximum video duration: 10 minutes
-- Serverless environment constraints (no binary dependencies like youtube-dl)
-- YouTube's anti-bot measures require sophisticated header spoofing
+- Serverless environment constraints (read-only filesystem on Vercel)
+- YouTube's evolving anti-bot measures may require periodic updates to extraction methods

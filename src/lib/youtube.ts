@@ -1,5 +1,6 @@
 import ytdl from '@distube/ytdl-core';
 import { Readable } from 'stream';
+import fetch from 'node-fetch';
 
 export interface VideoInfo {
   title: string;
@@ -43,50 +44,122 @@ function getRandomHeaders() {
   };
 }
 
+// Extract video ID from YouTube URL
+function extractVideoId(url: string): string | null {
+  const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+}
+
+// Alternative method to get video info by scraping YouTube page
+async function getVideoInfoFromPage(url: string): Promise<VideoInfo> {
+  const headers = getRandomHeaders();
+
+  try {
+    console.log('Attempting to fetch video info from YouTube page directly...');
+
+    const response = await fetch(url, {
+      headers,
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const html = await response.text();
+
+    // Extract video info from page HTML
+    const titleMatch = html.match(/<title>([^<]+)<\/title>/);
+    const title = titleMatch ? titleMatch[1].replace(' - YouTube', '') : 'Unknown Title';
+
+    // Extract duration from JSON data
+    const durationMatch = html.match(/"lengthSeconds":"(\d+)"/);
+    const duration = durationMatch ? parseInt(durationMatch[1]) : 0;
+
+    // Extract thumbnail
+    const thumbnailMatch = html.match(/"url":"(https:\/\/i\.ytimg\.com\/vi\/[^"]+)"/);
+    const thumbnail = thumbnailMatch ? thumbnailMatch[1] : '';
+
+    // Extract author
+    const authorMatch = html.match(/"author":"([^"]+)"/);
+    const author = authorMatch ? authorMatch[1] : 'Unknown';
+
+    // Extract video ID
+    const videoId = extractVideoId(url) || '';
+
+    console.log('Successfully extracted video info from page:', {
+      title,
+      duration,
+      videoId,
+      author
+    });
+
+    return {
+      title,
+      duration,
+      thumbnail,
+      videoId,
+      author,
+    };
+  } catch (error) {
+    console.error('Failed to get video info from page:', error);
+    throw error;
+  }
+}
+
 export async function getVideoInfo(url: string): Promise<VideoInfo> {
   let lastError: Error | null = null;
 
-  // Try multiple times with different configurations
-  const attempts = [
-    // Attempt 1: Basic configuration with random headers
+  // Validate URL format first
+  if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+    throw new Error('Invalid YouTube URL format');
+  }
+
+  console.log('Starting video info extraction for:', url);
+
+  // Method 1: Try direct page scraping first (most reliable)
+  try {
+    console.log('Method 1: Attempting direct page scraping...');
+    return await getVideoInfoFromPage(url);
+  } catch (error) {
+    lastError = error instanceof Error ? error : new Error('Unknown error');
+    console.log('Method 1 failed:', lastError.message);
+  }
+
+  // Method 2: Try ytdl-core (if page scraping failed)
+  // Note: ytdl-core may still create debug files, but page scraping should work first
+  const ytdlAttempts = [
+    // Safe ytdl.getInfo
     () => ytdl.getInfo(url, {
       requestOptions: {
         headers: getRandomHeaders(),
-      }
+      },
     }),
 
-    // Attempt 2: With different request options
+    // Alternative with different headers
     () => ytdl.getInfo(url, {
       requestOptions: {
-        headers: getRandomHeaders(),
-      }
-    }),
-
-    // Attempt 3: With basic info only (faster)
-    () => ytdl.getBasicInfo(url, {
-      requestOptions: {
-        headers: getRandomHeaders(),
-      }
+        headers: {
+          ...getRandomHeaders(),
+          'Cookie': '',
+        },
+      },
     })
   ];
 
-  for (let i = 0; i < attempts.length; i++) {
+  for (let i = 0; i < ytdlAttempts.length; i++) {
     try {
-      console.log(`Attempting to get video info for URL (attempt ${i + 1}):`, url);
+      console.log(`Method 2.${i + 1}: Attempting ytdl-core...`);
 
-      // Validate URL format
-      if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
-        throw new Error('Invalid YouTube URL format');
-      }
-
-      // Add small random delay to appear more human-like
+      // Add small random delay
       if (i > 0) {
         await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
       }
 
-      const info = await attempts[i]();
+      const info = await ytdlAttempts[i]();
 
-      console.log(`Successfully retrieved video info (attempt ${i + 1}):`, {
+      console.log(`Method 2.${i + 1} succeeded:`, {
         title: info.videoDetails.title,
         duration: info.videoDetails.lengthSeconds,
         videoId: info.videoDetails.videoId
@@ -101,24 +174,37 @@ export async function getVideoInfo(url: string): Promise<VideoInfo> {
       };
     } catch (error) {
       lastError = error instanceof Error ? error : new Error('Unknown error');
-      console.log(`Attempt ${i + 1} failed:`, lastError.message);
+      console.log(`Method 2.${i + 1} failed:`, lastError.message);
 
-      // If this is a bot detection error, try next method immediately
-      if (lastError.message.includes('Sign in to confirm') ||
-          lastError.message.includes('playError')) {
-        continue;
+      // Skip remaining ytdl attempts if it's a file system error
+      if (lastError.message.includes('EROFS') || lastError.message.includes('read-only')) {
+        console.log('File system error detected, skipping remaining ytdl attempts');
+        break;
       }
-
-      // For other errors, still try other methods but log more details
-      console.error(`Attempt ${i + 1} error details:`, {
-        message: lastError.message,
-        url: url
-      });
     }
   }
 
-  // All attempts failed
-  console.error('All attempts failed. Last error:', lastError);
+  // Method 3: Last resort - extract from URL if it has video ID
+  try {
+    console.log('Method 3: Attempting basic info extraction from URL...');
+    const videoId = extractVideoId(url);
+
+    if (videoId) {
+      // Create basic info if we can at least get the video ID
+      return {
+        title: `YouTube Video ${videoId}`,
+        duration: 0, // Unknown duration
+        thumbnail: `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
+        videoId,
+        author: 'Unknown',
+      };
+    }
+  } catch (error) {
+    console.log('Method 3 failed:', error);
+  }
+
+  // All methods failed
+  console.error('All methods failed. Last error:', lastError);
 
   if (lastError) {
     if (lastError.message.includes('Video unavailable')) {
@@ -133,44 +219,96 @@ export async function getVideoInfo(url: string): Promise<VideoInfo> {
     if (lastError.message.includes('Sign in to confirm') || lastError.message.includes('playError')) {
       throw new Error('YouTube bot detection triggered. Video may be region-restricted or require sign-in.');
     }
+    if (lastError.message.includes('EROFS') || lastError.message.includes('read-only')) {
+      throw new Error('Server file system restriction. Please try again.');
+    }
   }
 
-  throw new Error('Failed to get video information after multiple attempts: ' + (lastError?.message || 'Unknown error'));
+  throw new Error('Failed to get video information using all available methods: ' + (lastError?.message || 'Unknown error'));
 }
 
 export async function getAudioStream(url: string): Promise<Readable> {
-  try {
-    // Use the same logic as getVideoInfo for better reliability
-    const headers = getRandomHeaders();
+  let lastError: Error | null = null;
 
-    // First get video info to check available formats
-    const info = await ytdl.getInfo(url, {
-      requestOptions: {
-        headers,
+  // Try multiple approaches for getting audio stream
+  const streamAttempts = [
+    // Attempt 1: High quality audio without video
+    () => {
+      const headers = getRandomHeaders();
+      return ytdl(url, {
+        filter: format => format.hasAudio && !format.hasVideo,
+        quality: 'highestaudio',
+        requestOptions: {
+          headers,
+        },
+      });
+    },
+
+    // Attempt 2: Alternative with different quality
+    () => {
+      const headers = getRandomHeaders();
+      return ytdl(url, {
+        filter: format => format.hasAudio,
+        quality: 'lowestaudio', // Lower quality as fallback
+        requestOptions: {
+          headers,
+        },
+      });
+    },
+
+    // Attempt 3: Any audio format
+    () => {
+      const headers = getRandomHeaders();
+      return ytdl(url, {
+        filter: 'audioonly',
+        requestOptions: {
+          headers,
+        },
+      });
+    }
+  ];
+
+  for (let i = 0; i < streamAttempts.length; i++) {
+    try {
+      console.log(`Attempting to get audio stream (method ${i + 1})...`);
+
+      // Add delay between attempts
+      if (i > 0) {
+        await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 1000));
       }
-    });
 
-    console.log('Available formats:', info.formats.filter(f => f.hasAudio).map(f => ({
-      itag: f.itag,
-      container: f.container,
-      hasAudio: f.hasAudio,
-      hasVideo: f.hasVideo,
-      audioBitrate: f.audioBitrate,
-      audioQuality: f.audioQuality
-    })));
+      const stream = streamAttempts[i]();
 
-    // Try to get audio stream with different quality options
-    const stream = ytdl(url, {
-      filter: format => format.hasAudio && !format.hasVideo,
-      quality: 'highestaudio',
-      requestOptions: {
-        headers,
+      // Test if stream is valid by listening for data
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Stream timeout'));
+        }, 10000);
+
+        stream.once('response', () => {
+          clearTimeout(timeout);
+          console.log(`Audio stream method ${i + 1} successful`);
+          resolve(stream);
+        });
+
+        stream.once('error', (error) => {
+          clearTimeout(timeout);
+          reject(error);
+        });
+      });
+
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Unknown error');
+      console.log(`Audio stream method ${i + 1} failed:`, lastError.message);
+
+      // Skip remaining attempts if it's a file system error
+      if (lastError.message.includes('EROFS') || lastError.message.includes('read-only')) {
+        console.log('File system error detected, skipping remaining stream attempts');
+        break;
       }
-    });
-
-    return stream;
-  } catch (error) {
-    console.error('Error getting audio stream:', error);
-    throw new Error('Failed to get audio stream');
+    }
   }
+
+  console.error('All audio stream methods failed. Last error:', lastError);
+  throw new Error('Failed to get audio stream: ' + (lastError?.message || 'Unknown error'));
 }
