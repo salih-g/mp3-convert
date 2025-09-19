@@ -227,10 +227,148 @@ export async function getVideoInfo(url: string): Promise<VideoInfo> {
   throw new Error('Failed to get video information using all available methods: ' + (lastError?.message || 'Unknown error'));
 }
 
+// Alternative method to get audio URL directly from video info
+async function getAudioUrlFromVideoInfo(url: string): Promise<string> {
+  try {
+    console.log('Attempting to get audio URL from video info...');
+
+    // First try to get video info to find audio formats
+    const videoInfo = await getVideoInfoFromPage(url);
+    const videoId = videoInfo.videoId;
+
+    if (!videoId) {
+      throw new Error('No video ID found');
+    }
+
+    // Try to extract audio URLs from YouTube's player response
+    const headers = getRandomHeaders();
+    const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+    const response = await fetch(watchUrl, {
+      headers,
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const html = await response.text();
+
+    // Look for player response data in the HTML
+    const playerResponseMatch = html.match(/var ytInitialPlayerResponse = ({.+?});/);
+    if (!playerResponseMatch) {
+      throw new Error('No player response found');
+    }
+
+    const playerResponse = JSON.parse(playerResponseMatch[1]);
+    const formats = playerResponse?.streamingData?.adaptiveFormats || [];
+
+    // Find audio-only formats
+    interface YouTubeFormat {
+      mimeType?: string;
+      url?: string;
+      bitrate?: string | number;
+      audioQuality?: string;
+    }
+
+    const audioFormats = formats.filter((format: YouTubeFormat) =>
+      format.mimeType?.includes('audio') && format.url
+    );
+
+    if (audioFormats.length === 0) {
+      throw new Error('No audio formats found');
+    }
+
+    // Sort by quality and get the best one
+    const bestAudio = audioFormats.sort((a: YouTubeFormat, b: YouTubeFormat) => {
+      const aQuality = parseInt(String(a.bitrate)) || 0;
+      const bQuality = parseInt(String(b.bitrate)) || 0;
+      return bQuality - aQuality;
+    })[0];
+
+    console.log('Found audio URL:', {
+      bitrate: bestAudio.bitrate,
+      mimeType: bestAudio.mimeType,
+      quality: bestAudio.audioQuality
+    });
+
+    return bestAudio.url;
+  } catch (error) {
+    console.error('Failed to get audio URL from video info:', error);
+    throw error;
+  }
+}
+
+// Create readable stream from audio URL
+async function createStreamFromUrl(audioUrl: string): Promise<Readable> {
+  try {
+    console.log('Creating stream from audio URL...');
+
+    const headers = getRandomHeaders();
+    const response = await fetch(audioUrl, {
+      headers,
+      signal: AbortSignal.timeout(30000),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    if (!response.body) {
+      throw new Error('No response body');
+    }
+
+    // Convert web ReadableStream to Node.js Readable
+    const nodeStream = new Readable({
+      read() {}
+    });
+
+    // Type assertion for node-fetch ReadableStream
+    const webStream = response.body as unknown as ReadableStream<Uint8Array>;
+    const reader = webStream.getReader();
+
+    const pump = async () => {
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            nodeStream.push(null);
+            break;
+          }
+          if (value) {
+            nodeStream.push(Buffer.from(value));
+          }
+        }
+      } catch (error) {
+        nodeStream.destroy(error as Error);
+      }
+    };
+
+    pump();
+    return nodeStream;
+  } catch (error) {
+    console.error('Failed to create stream from URL:', error);
+    throw error;
+  }
+}
+
 export async function getAudioStream(url: string): Promise<Readable> {
   let lastError: Error | null = null;
 
-  // Try multiple approaches for getting audio stream
+  console.log('Starting audio stream extraction for:', url);
+
+  // Method 1: Try direct audio URL extraction (EROFS-safe)
+  try {
+    console.log('Method 1: Attempting direct audio URL extraction...');
+    const audioUrl = await getAudioUrlFromVideoInfo(url);
+    return await createStreamFromUrl(audioUrl);
+  } catch (error) {
+    lastError = error instanceof Error ? error : new Error('Unknown error');
+    console.log('Method 1 failed:', lastError.message);
+  }
+
+  // Method 2: Try ytdl-core as fallback (may cause EROFS errors)
   const streamAttempts = [
     // Attempt 1: High quality audio without video
     () => {
@@ -249,18 +387,7 @@ export async function getAudioStream(url: string): Promise<Readable> {
       const headers = getRandomHeaders();
       return ytdl(url, {
         filter: format => format.hasAudio,
-        quality: 'lowestaudio', // Lower quality as fallback
-        requestOptions: {
-          headers,
-        },
-      });
-    },
-
-    // Attempt 3: Any audio format
-    () => {
-      const headers = getRandomHeaders();
-      return ytdl(url, {
-        filter: 'audioonly',
+        quality: 'lowestaudio',
         requestOptions: {
           headers,
         },
@@ -270,7 +397,7 @@ export async function getAudioStream(url: string): Promise<Readable> {
 
   for (let i = 0; i < streamAttempts.length; i++) {
     try {
-      console.log(`Attempting to get audio stream (method ${i + 1})...`);
+      console.log(`Method 2.${i + 1}: Attempting ytdl-core...`);
 
       // Add delay between attempts
       if (i > 0) {
@@ -279,7 +406,7 @@ export async function getAudioStream(url: string): Promise<Readable> {
 
       const stream = streamAttempts[i]();
 
-      // Test if stream is valid by listening for data
+      // Test if stream is valid by listening for response
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error('Stream timeout'));
@@ -287,7 +414,7 @@ export async function getAudioStream(url: string): Promise<Readable> {
 
         stream.once('response', () => {
           clearTimeout(timeout);
-          console.log(`Audio stream method ${i + 1} successful`);
+          console.log(`Method 2.${i + 1} successful`);
           resolve(stream);
         });
 
@@ -299,16 +426,21 @@ export async function getAudioStream(url: string): Promise<Readable> {
 
     } catch (error) {
       lastError = error instanceof Error ? error : new Error('Unknown error');
-      console.log(`Audio stream method ${i + 1} failed:`, lastError.message);
+      console.log(`Method 2.${i + 1} failed:`, lastError.message);
 
       // Skip remaining attempts if it's a file system error
       if (lastError.message.includes('EROFS') || lastError.message.includes('read-only')) {
-        console.log('File system error detected, skipping remaining stream attempts');
+        console.log('File system error detected, skipping remaining ytdl attempts');
         break;
       }
     }
   }
 
   console.error('All audio stream methods failed. Last error:', lastError);
+
+  if (lastError?.message.includes('EROFS') || lastError?.message.includes('read-only')) {
+    throw new Error('Server file system restriction. Audio streaming temporarily unavailable.');
+  }
+
   throw new Error('Failed to get audio stream: ' + (lastError?.message || 'Unknown error'));
 }

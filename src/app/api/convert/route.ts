@@ -97,6 +97,19 @@ export async function POST(request: NextRequest) {
               { error: 'Video is private or restricted' },
               { status: 403 }
             ));
+          } else if (error.message.includes('EROFS') ||
+                     error.message.includes('read-only') ||
+                     error.message.includes('file system restriction')) {
+            resolve(NextResponse.json(
+              { error: 'Server temporarily unavailable. Please try again.' },
+              { status: 503 }
+            ));
+          } else if (error.message.includes('bot detection') ||
+                     error.message.includes('Sign in to confirm')) {
+            resolve(NextResponse.json(
+              { error: 'YouTube access temporarily restricted. Please try again later.' },
+              { status: 429 }
+            ));
           } else {
             resolve(NextResponse.json(
               { error: 'Failed to convert video to audio' },
@@ -122,6 +135,21 @@ export async function POST(request: NextRequest) {
           return NextResponse.json(
             { error: 'Video is private or restricted' },
             { status: 403 }
+          );
+        }
+        if (streamError.message.includes('EROFS') ||
+            streamError.message.includes('read-only') ||
+            streamError.message.includes('file system restriction')) {
+          return NextResponse.json(
+            { error: 'Server temporarily unavailable. Please try again.' },
+            { status: 503 }
+          );
+        }
+        if (streamError.message.includes('bot detection') ||
+            streamError.message.includes('Sign in to confirm')) {
+          return NextResponse.json(
+            { error: 'YouTube access temporarily restricted. Please try again later.' },
+            { status: 429 }
           );
         }
       }

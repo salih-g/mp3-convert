@@ -50,7 +50,10 @@ This is a YouTube to MP3 converter application with the following functionality:
   1. **Direct page scraping** - Primary method using node-fetch to scrape YouTube pages
   2. **ytdl-core fallback** - Secondary method with enhanced headers and retry logic
   3. **URL-based extraction** - Last resort method extracting basic info from video ID
-- **EROFS-safe implementation** - Designed to work on Vercel's read-only filesystem
+- **EROFS-safe audio streaming** - Direct audio URL extraction without file system dependencies:
+  1. **Player response parsing** - Extracts audio URLs directly from YouTube's player data
+  2. **Native fetch streaming** - Uses node-fetch to create audio streams without ytdl-core debug files
+  3. **ytdl-core fallback** - Secondary audio extraction method when direct URL fails
 - **Randomized headers** - Multiple user agents and Accept-Language headers for bot detection bypass
 - **Comprehensive error handling** - Specific handling for bot detection, region restrictions, and file system errors
 - **Intelligent retry system** - Delays between attempts and method switching on specific error types
