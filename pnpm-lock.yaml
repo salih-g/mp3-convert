@@ -32,6 +32,9 @@ importers:
       tailwind-merge:
         specifier: ^3.3.1
         version: 3.3.1
+      yt-dlp-wrap:
+        specifier: ^2.3.12
+        version: 2.3.12
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3
@@ -1866,6 +1869,9 @@ packages:
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
+
+  yt-dlp-wrap@2.3.12:
+    resolution: {integrity: sha512-P8fJ+6M1YjukyJENCTviNLiZ8mokxprR54ho3DsSKPWDcac489OjRiStGEARJr6un6ETS6goTn4CWl/b/rM3aA==}
 
 snapshots:
 
@@ -3900,3 +3906,5 @@ snapshots:
   yallist@5.0.0: {}
 
   yocto-queue@0.1.0: {}
+
+  yt-dlp-wrap@2.3.12: {}
